@@ -40,13 +40,16 @@ CALENDAR_PREFIX = "[日历]"
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
-def decode_secret(secret_name: str) -> str:
+def decode_secret(secret_name: str, as_bytes: bool = False):
     """从环境变量读取 base64 编码的 Secret 并解码"""
     encoded = os.environ.get(secret_name)
     if not encoded:
         print(f"警告: 未找到环境变量 {secret_name}")
         return None
-    return base64.b64decode(encoded).decode('utf-8')
+    decoded = base64.b64decode(encoded)
+    if as_bytes:
+        return decoded
+    return decoded.decode('utf-8')
 
 
 class CalendarSyncer:
@@ -72,15 +75,11 @@ class CalendarSyncer:
             print("错误: CREDENTIALS_JSON 环境变量未设置")
             return False
 
-        # 解码 token.pickle
-        token_pickle = decode_secret("TOKEN_PICKLE")
+       # 解码 token.pickle（二进制文件，不能用 UTF-8 解码）
+        token_pickle = decode_secret("TOKEN_PICKLE", as_bytes=True)
         if token_pickle:
             with open('token.pickle', 'wb') as f:
-                f.write(token_pickle.encode('latin-1') if isinstance(token_pickle, str) else token_pickle)
-            print("✓ token.pickle 已从 Secret 写入")
-        else:
-            print("错误: TOKEN_PICKLE 环境变量未设置")
-            return False
+                f.write(token_pickle)
 
         return True
 
