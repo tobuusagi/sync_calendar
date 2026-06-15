@@ -4,6 +4,7 @@ import base64
 import argparse
 import requests
 import datetime
+import zoneinfo
 import json
 import sys
 import time
@@ -75,11 +76,15 @@ class CalendarSyncer:
             print("错误: CREDENTIALS_JSON 环境变量未设置")
             return False
 
-       # 解码 token.pickle（二进制文件，不能用 UTF-8 解码）
+        # 解码 token.pickle（二进制文件，不能用 UTF-8 解码）
         token_pickle = decode_secret("TOKEN_PICKLE", as_bytes=True)
         if token_pickle:
             with open('token.pickle', 'wb') as f:
                 f.write(token_pickle)
+            print("✓ token.pickle 已从 Secret 写入")
+        else:
+            print("错误: TOKEN_PICKLE 环境变量未设置")
+            return False
 
         return True
 
@@ -188,7 +193,7 @@ class CalendarSyncer:
             principal = client.principal()
             calendars = principal.calendars()
             events = []
-            now = datetime.datetime.now().astimezone()
+            now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
             start_search = now - datetime.timedelta(minutes=10)
             target_end = now.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(days=2)
 
@@ -205,7 +210,7 @@ class CalendarSyncer:
         events = []
         try:
             cal = Calendar.from_ical(event.data)
-            now = datetime.datetime.now().astimezone()
+            now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
             target_end = now.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(days=2)
 
             for component in cal.walk():
@@ -217,9 +222,9 @@ class CalendarSyncer:
                     
                     dt = dtstart.dt
                     if isinstance(dt, datetime.datetime):
-                        dt = dt.astimezone()
+                        dt = dt.astimezone(datetime.timezone(datetime.timedelta(hours=8)))
                     else:
-                        dt = datetime.datetime.combine(dt, datetime.time(9, 0)).astimezone()
+                        dt = datetime.datetime.combine(dt, datetime.time(9, 0)).astimezone(datetime.timezone(datetime.timedelta(hours=8)))
 
                     if now <= dt <= target_end:
                         events.append({
