@@ -1,0 +1,31 @@
+name: Google Calendar to Zectrix Sync
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [cron-trigger]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install requests icalendar caldav google-auth google-auth-oauthlib python-dotenv
+
+    - name: Run sync script
+      env:
+        CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
+        TOKEN_PICKLE: ${{ secrets.TOKEN_PICKLE }}
+        ZECTRIX_API_KEY: ${{ secrets.ZECTRIX_API_KEY }}
+      run: |
+        python sync_calendar.py
